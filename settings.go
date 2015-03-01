@@ -77,8 +77,14 @@ const (
 )
 
 type DBConfig struct {
-	Driver string `toml:"driver"`
-	DSN    string `toml:"dsn"`
+	Driver string       `toml:"driver"`
+	DSN    string       `toml:"dsn"`
+	Mongo  *mongoConfig `toml:"mongo"`
+}
+
+type mongoConfig struct {
+	DB         string `toml:"db"`
+	Collection string `toml:"collection"`
 }
 
 const (

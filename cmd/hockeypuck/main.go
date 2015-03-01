@@ -1,23 +1,56 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"gopkg.in/hockeypuck/server"
+	"github.com/hockeypuck/server"
+	"gopkg.in/errgo.v1"
 )
 
-func main() {
-	srv, err := server.NewServer(nil)
+var (
+	configFile = flag.String("config", "", "config file")
+)
+
+func die(err error) {
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, errgo.Details(err))
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
+func main() {
+	flag.Parse()
+
+	var (
+		settings *server.Settings
+		err      error
+	)
+	if configFile != nil {
+		conf, err := ioutil.ReadFile(*configFile)
+		if err != nil {
+			die(errgo.Mask(err))
+		}
+		settings, err = server.ParseSettings(string(conf))
+		if err != nil {
+			die(errgo.Mask(err))
+		}
+	}
+
+	srv, err := server.NewServer(settings)
+	if err != nil {
+		die(err)
 	}
 
 	srv.Start()
 
 	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		for {
 			select {
@@ -25,13 +58,13 @@ func main() {
 				switch sig {
 				case syscall.SIGINT, syscall.SIGTERM:
 					srv.Stop()
+				default:
+					srv.LogRotate()
 				}
 			}
 		}
 	}()
 
 	err = srv.Wait()
-	if err != nil {
-		panic(err)
-	}
+	die(err)
 }

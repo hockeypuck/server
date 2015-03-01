@@ -2,10 +2,14 @@ package server
 
 import (
 	"crypto/tls"
+	"io"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/carbocation/interpose"
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/errgo.v1"
 	"gopkg.in/tomb.v2"
@@ -13,14 +17,17 @@ import (
 	"gopkg.in/hockeypuck/hkp.v0"
 	"gopkg.in/hockeypuck/hkp.v0/sks"
 	"gopkg.in/hockeypuck/hkp.v0/storage"
+	log "gopkg.in/hockeypuck/logrus.v0"
 	"gopkg.in/hockeypuck/mgohkp.v0"
 )
 
 type Server struct {
-	settings *Settings
-	st       storage.Storage
-	r        *httprouter.Router
-	sksPeer  *sks.Peer
+	settings  *Settings
+	st        storage.Storage
+	middle    *interpose.Middleware
+	r         *httprouter.Router
+	sksPeer   *sks.Peer
+	logWriter io.WriteCloser
 
 	t                 tomb.Tomb
 	hkpAddr, hkpsAddr string
@@ -39,13 +46,34 @@ func NewServer(settings *Settings) (*Server, error) {
 	var err error
 	switch settings.OpenPGP.DB.Driver {
 	case "mongo":
-		s.st, err = mgohkp.Dial(settings.OpenPGP.DB.DSN)
+		var options []mgohkp.Option
+		if settings.OpenPGP.DB.Mongo.DB != "" {
+			options = append(options, mgohkp.DBName(settings.OpenPGP.DB.Mongo.DB))
+		}
+		if settings.OpenPGP.DB.Mongo.Collection != "" {
+			options = append(options, mgohkp.CollectionName(settings.OpenPGP.DB.Mongo.Collection))
+		}
+		s.st, err = mgohkp.Dial(settings.OpenPGP.DB.DSN, options...)
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
 	default:
 		return nil, errgo.Newf("storage driver %q not supported", settings.OpenPGP.DB.DSN)
 	}
+
+	s.middle = interpose.New()
+	s.middle.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			start := time.Now()
+			next.ServeHTTP(rw, req)
+			log.WithFields(log.Fields{
+				req.Method: req.URL.String(),
+				"duration": time.Since(start).String(),
+				"from":     req.RemoteAddr,
+			}).Info()
+		})
+	})
+	s.middle.UseHandler(s.r)
 
 	h := hkp.NewHandler(s.st)
 	h.Register(s.r)
@@ -61,6 +89,8 @@ func NewServer(settings *Settings) (*Server, error) {
 }
 
 func (s *Server) Start() error {
+	s.openLog()
+
 	s.t.Go(s.listenAndServeHKP)
 	if s.settings.HKPS != nil {
 		s.t.Go(s.listenAndServeHKPS)
@@ -73,15 +103,57 @@ func (s *Server) Start() error {
 	return nil
 }
 
+type nopCloser struct {
+	io.Writer
+}
+
+func (nopCloser) Close() error { return nil }
+
+func (s *Server) openLog() {
+	defer func() {
+		level, err := log.ParseLevel(strings.ToLower(s.settings.LogLevel))
+		if err != nil {
+			log.Warningf("invalid LogLevel=%q: %v", s.settings.LogLevel, err)
+			return
+		}
+		log.SetLevel(level)
+	}()
+
+	s.logWriter = nopCloser{os.Stderr}
+	if s.settings.LogFile != "" {
+		f, err := os.OpenFile(s.settings.LogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			log.Errorf("failed to open LogFile=%q: %v", s.settings.LogFile, err)
+		}
+		s.logWriter = f
+	}
+	log.SetOutput(s.logWriter)
+	log.Debug("log opened")
+}
+
+func (s *Server) closeLog() {
+	log.SetOutput(os.Stderr)
+	s.logWriter.Close()
+}
+
+func (s *Server) LogRotate() {
+	w := s.logWriter
+	s.openLog()
+	w.Close()
+}
+
 func (s *Server) Wait() error {
 	return s.t.Wait()
 }
 
 func (s *Server) Stop() {
+	defer s.closeLog()
+
 	s.t.Go(func() error {
 		s.sksPeer.Stop()
 		return nil
 	})
+	s.t.Kill(nil)
 	s.t.Wait()
 }
 
@@ -125,7 +197,7 @@ func (s *Server) listenAndServeHKP() error {
 		return err
 	}
 	s.hkpAddr = ln.Addr().String()
-	return http.Serve(ln, s.r)
+	return http.Serve(ln, s.middle)
 }
 
 func (s *Server) listenAndServeHKPS() error {
@@ -145,31 +217,5 @@ func (s *Server) listenAndServeHKPS() error {
 	}
 	s.hkpsAddr = ln.Addr().String()
 	ln = tls.NewListener(ln, config)
-	return http.Serve(ln, s.r)
+	return http.Serve(ln, s.middle)
 }
-
-/*
-func main() {
-	session, err := mgo.Dial("localhost:27017")
-	if err != nil {
-		panic(err)
-	}
-
-	st, err := mgohkp.NewStorage(session)
-	if err != nil {
-		panic(err)
-	}
-
-	h := hkp.NewHandler(st)
-	r := httprouter.New()
-	h.Register(r)
-
-	peer, err := sks.NewPeer(st, "recon-ptree", nil)
-	if err != nil {
-		panic(err)
-	}
-	peer.Start()
-
-	http.ListenAndServe(":11371", r)
-}
-*/
