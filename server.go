@@ -75,7 +75,10 @@ func NewServer(settings *Settings) (*Server, error) {
 	})
 	s.middle.UseHandler(s.r)
 
-	h := hkp.NewHandler(s.st)
+	h, err := hkp.NewHandler(s.st)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
 	h.Register(s.r)
 
 	if len(settings.Conflux.Recon.Partners) > 0 {
