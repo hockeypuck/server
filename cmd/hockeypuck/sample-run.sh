@@ -1,7 +1,9 @@
-#!/bin/bash -ex
+#!/bin/bash -x
 
 killall hockeypuck
 rm -rf ptree-peer*
+
+set -e
 
 go build
 
