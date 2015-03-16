@@ -6,7 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime/pprof"
 	"syscall"
+	"time"
+
+	log "gopkg.in/hockeypuck/logrus.v0"
 
 	"github.com/hockeypuck/server"
 	"gopkg.in/errgo.v1"
@@ -14,6 +19,8 @@ import (
 
 var (
 	configFile = flag.String("config", "", "config file")
+	cpuProf    = flag.Bool("cpuprof", false, "enable CPU profiling")
+	memProf    = flag.Bool("memprof", false, "enable mem profiling")
 )
 
 func die(err error) {
@@ -22,6 +29,45 @@ func die(err error) {
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func startCPUProf(prior *os.File) *os.File {
+	if prior != nil {
+		pprof.StopCPUProfile()
+		log.Infof("CPU profile written to %q", prior.Name())
+		prior.Close()
+		os.Rename(filepath.Join(os.TempDir(), "hockeypuck-cpu.prof.part"),
+			filepath.Join(os.TempDir(), "hockeypuck-cpu.prof"))
+	}
+	if *cpuProf {
+		profName := filepath.Join(os.TempDir(), "hockeypuck-cpu.prof.part")
+		f, err := os.Create(profName)
+		if err != nil {
+			die(errgo.Mask(err))
+		}
+		pprof.StartCPUProfile(f)
+		return f
+	}
+	return nil
+}
+
+func writeMemProf() {
+	if *memProf {
+		tmpName := filepath.Join(os.TempDir(), fmt.Sprintf("hockeypuck-mem.prof.%d", time.Now().Unix()))
+		profName := filepath.Join(os.TempDir(), "hockeypuck-mem.prof")
+		f, err := os.Create(tmpName)
+		if err != nil {
+			die(errgo.Mask(err))
+		}
+		err = pprof.WriteHeapProfile(f)
+		f.Close()
+		if err != nil {
+			log.Warningf("failed to write heap profile: %v", err)
+			return
+		}
+		log.Infof("Heap profile written to %q", f.Name())
+		os.Rename(tmpName, profName)
+	}
 }
 
 func main() {
@@ -42,6 +88,8 @@ func main() {
 		}
 	}
 
+	cpuFile := startCPUProf(nil)
+
 	srv, err := server.NewServer(settings)
 	if err != nil {
 		die(err)
@@ -50,7 +98,7 @@ func main() {
 	srv.Start()
 
 	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 	go func() {
 		for {
 			select {
@@ -58,8 +106,11 @@ func main() {
 				switch sig {
 				case syscall.SIGINT, syscall.SIGTERM:
 					srv.Stop()
-				default:
+				case syscall.SIGUSR1:
 					srv.LogRotate()
+				case syscall.SIGUSR2:
+					cpuFile = startCPUProf(cpuFile)
+					writeMemProf()
 				}
 			}
 		}

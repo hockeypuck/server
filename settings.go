@@ -69,9 +69,6 @@ type SMTPConfig struct {
 }
 
 const (
-	//DefaultDBDriver = "postgres"
-	//DefaultDBDSN    = "dbname=hkp host=/var/run/postgresql sslmode=disable"
-
 	DefaultDBDriver = "mongo"
 	DefaultDBDSN    = "localhost:27017"
 )
@@ -93,17 +90,14 @@ const (
 )
 
 type OpenPGPConfig struct {
-	PKS               *PKSConfig `toml:"pks"`
-	VerifySigs        bool       `toml:"verifySigs"`
-	StatsRefreshHours int        `toml:"statsRefresh"`
-	NWorkers          int        `toml:"nworkers"`
-	DB                DBConfig   `toml:"db"`
+	PKS      *PKSConfig `toml:"pks"`
+	NWorkers int        `toml:"nworkers"`
+	DB       DBConfig   `toml:"db"`
 }
 
 func DefaultOpenPGP() OpenPGPConfig {
 	return OpenPGPConfig{
-		StatsRefreshHours: DefaultStatsRefreshHours,
-		NWorkers:          DefaultNWorkers,
+		NWorkers: DefaultNWorkers,
 		DB: DBConfig{
 			Driver: DefaultDBDriver,
 			DSN:    DefaultDBDSN,
@@ -114,6 +108,9 @@ func DefaultOpenPGP() OpenPGPConfig {
 type Settings struct {
 	Conflux confluxConfig `toml:"conflux"`
 
+	IndexTemplate  string `toml:indexTemplate`
+	VIndexTemplate string `toml:vindexTemplate`
+
 	HKP  HKPConfig   `toml:"hkp"`
 	HKPS *HKPSConfig `toml:"hkps"`
 
@@ -121,7 +118,6 @@ type Settings struct {
 
 	LogFile  string `toml:"logfile"`
 	LogLevel string `toml:"loglevel"`
-	Webroot  string `toml:"webroot"`
 }
 
 const (

@@ -77,7 +77,14 @@ func NewServer(settings *Settings) (*Server, error) {
 	})
 	s.middle.UseHandler(s.r)
 
-	h, err := hkp.NewHandler(s.st)
+	var options []hkp.HandlerOption
+	if settings.IndexTemplate != "" {
+		options = append(options, hkp.IndexTemplate(settings.IndexTemplate))
+	}
+	if settings.VIndexTemplate != "" {
+		options = append(options, hkp.VIndexTemplate(settings.VIndexTemplate))
+	}
+	h, err := hkp.NewHandler(s.st, options...)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -154,10 +161,12 @@ func (s *Server) Wait() error {
 func (s *Server) Stop() {
 	defer s.closeLog()
 
-	s.t.Go(func() error {
-		s.sksPeer.Stop()
-		return nil
-	})
+	if s.sksPeer != nil {
+		s.t.Go(func() error {
+			s.sksPeer.Stop()
+			return nil
+		})
+	}
 	s.t.Kill(nil)
 	s.t.Wait()
 }
