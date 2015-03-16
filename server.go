@@ -90,6 +90,13 @@ func NewServer(settings *Settings) (*Server, error) {
 	}
 	h.Register(s.r)
 
+	if settings.Webroot != "" {
+		err := s.registerWebroot(settings.Webroot)
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
+	}
+
 	if len(settings.Conflux.Recon.Partners) > 0 {
 		s.sksPeer, err = sks.NewPeer(s.st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
 		if err != nil {
@@ -98,6 +105,45 @@ func NewServer(settings *Settings) (*Server, error) {
 	}
 
 	return s, nil
+}
+
+func (s *Server) registerWebroot(webroot string) error {
+	fileServer := http.FileServer(http.Dir(webroot))
+	d, err := os.Open(webroot)
+	if os.IsNotExist(err) {
+		log.Errorf("webroot %q not found", webroot)
+		// non-fatal error
+		return nil
+	} else if err != nil {
+		return errgo.Mask(err)
+	}
+	defer d.Close()
+	files, err := d.Readdir(0)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+
+	s.r.GET("/", func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+		fileServer.ServeHTTP(w, req)
+	})
+	// httprouter needs explicit paths, so we need to set up a route for each
+	// path. This will panic if there are any paths that conflict with
+	// previously registered routes.
+	for _, fi := range files {
+		name := fi.Name()
+		if !fi.IsDir() {
+			s.r.GET("/"+name, func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+				req.URL.Path = "/" + name
+				fileServer.ServeHTTP(w, req)
+			})
+		} else {
+			s.r.GET("/"+name+"/*filepath", func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+				req.URL.Path = "/" + name + ps.ByName("filepath")
+				fileServer.ServeHTTP(w, req)
+			})
+		}
+	}
+	return nil
 }
 
 func (s *Server) Start() error {
