@@ -208,10 +208,7 @@ func (s *Server) Stop() {
 	defer s.closeLog()
 
 	if s.sksPeer != nil {
-		s.t.Go(func() error {
-			s.sksPeer.Stop()
-			return nil
-		})
+		s.sksPeer.Stop()
 	}
 	s.t.Kill(nil)
 	s.t.Wait()
