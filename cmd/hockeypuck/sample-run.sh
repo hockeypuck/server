@@ -2,6 +2,7 @@
 
 killall hockeypuck
 rm -rf ptree-peer*
+rm -rf .ptree-peer*
 
 set -e
 

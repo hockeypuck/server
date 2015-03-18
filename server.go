@@ -21,6 +21,14 @@ import (
 	"gopkg.in/hockeypuck/mgohkp.v0"
 )
 
+var version string
+
+func init() {
+	if version == "" {
+		version = "~unreleased"
+	}
+}
+
 type Server struct {
 	settings  *Settings
 	st        storage.Storage
@@ -77,12 +85,20 @@ func NewServer(settings *Settings) (*Server, error) {
 	})
 	s.middle.UseHandler(s.r)
 
-	var options []hkp.HandlerOption
+	s.sksPeer, err = sks.NewPeer(s.st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+
+	options := []hkp.HandlerOption{hkp.StatsFunc(s.stats)}
 	if settings.IndexTemplate != "" {
 		options = append(options, hkp.IndexTemplate(settings.IndexTemplate))
 	}
 	if settings.VIndexTemplate != "" {
 		options = append(options, hkp.VIndexTemplate(settings.VIndexTemplate))
+	}
+	if settings.StatsTemplate != "" {
+		options = append(options, hkp.StatsTemplate(settings.StatsTemplate))
 	}
 	h, err := hkp.NewHandler(s.st, options...)
 	if err != nil {
@@ -97,14 +113,17 @@ func NewServer(settings *Settings) (*Server, error) {
 		}
 	}
 
-	if len(settings.Conflux.Recon.Partners) > 0 {
-		s.sksPeer, err = sks.NewPeer(s.st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
-		if err != nil {
-			return nil, errgo.Mask(err)
-		}
-	}
-
 	return s, nil
+}
+
+func (s *Server) stats() (interface{}, error) {
+	return struct {
+		Settings *Settings
+		Stats    *sks.Stats
+	}{
+		Settings: s.settings,
+		Stats:    s.sksPeer.Stats(),
+	}, nil
 }
 
 func (s *Server) registerWebroot(webroot string) error {
