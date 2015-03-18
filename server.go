@@ -53,23 +53,9 @@ func NewServer(settings *Settings) (*Server, error) {
 	}
 
 	var err error
-	switch settings.OpenPGP.DB.Driver {
-	case "mongo":
-		var options []mgohkp.Option
-		if settings.OpenPGP.DB.Mongo != nil {
-			if settings.OpenPGP.DB.Mongo.DB != "" {
-				options = append(options, mgohkp.DBName(settings.OpenPGP.DB.Mongo.DB))
-			}
-			if settings.OpenPGP.DB.Mongo.Collection != "" {
-				options = append(options, mgohkp.CollectionName(settings.OpenPGP.DB.Mongo.Collection))
-			}
-		}
-		s.st, err = mgohkp.Dial(settings.OpenPGP.DB.DSN, options...)
-		if err != nil {
-			return nil, errgo.Mask(err)
-		}
-	default:
-		return nil, errgo.Newf("storage driver %q not supported", settings.OpenPGP.DB.DSN)
+	s.st, err = DialStorage(settings)
+	if err != nil {
+		return nil, err
 	}
 
 	s.middle = interpose.New()
@@ -115,6 +101,23 @@ func NewServer(settings *Settings) (*Server, error) {
 	}
 
 	return s, nil
+}
+
+func DialStorage(settings *Settings) (storage.Storage, error) {
+	switch settings.OpenPGP.DB.Driver {
+	case "mongo":
+		var options []mgohkp.Option
+		if settings.OpenPGP.DB.Mongo != nil {
+			if settings.OpenPGP.DB.Mongo.DB != "" {
+				options = append(options, mgohkp.DBName(settings.OpenPGP.DB.Mongo.DB))
+			}
+			if settings.OpenPGP.DB.Mongo.Collection != "" {
+				options = append(options, mgohkp.CollectionName(settings.OpenPGP.DB.Mongo.Collection))
+			}
+		}
+		return mgohkp.Dial(settings.OpenPGP.DB.DSN, options...)
+	}
+	return nil, errgo.Newf("storage driver %q not supported", settings.OpenPGP.DB.Driver)
 }
 
 type stats struct {
