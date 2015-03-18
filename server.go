@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -116,14 +117,46 @@ func NewServer(settings *Settings) (*Server, error) {
 	return s, nil
 }
 
+type stats struct {
+	*sks.Stats
+
+	Now       string `json:"now"`
+	Version   string `json:"version"`
+	HTTPAddr  string `json:"httpAddr"`
+	ReconAddr string `json:"reconAddr"`
+
+	Peers []statsPeer `json:"peers"`
+}
+
+type statsPeer struct {
+	Name      string
+	HTTPAddr  string `json:"httpAddr"`
+	ReconAddr string `json:"reconAddr"`
+}
+
+type statsPeers []statsPeer
+
+func (s statsPeers) Len() int           { return len(s) }
+func (s statsPeers) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s statsPeers) Less(i, j int) bool { return s[i].Name < s[j].Name }
+
 func (s *Server) stats() (interface{}, error) {
-	return struct {
-		Settings *Settings
-		Stats    *sks.Stats
-	}{
-		Settings: s.settings,
-		Stats:    s.sksPeer.Stats(),
-	}, nil
+	result := &stats{
+		Now:       time.Now().UTC().Format(time.RFC3339),
+		Stats:     s.sksPeer.Stats(),
+		Version:   version,
+		HTTPAddr:  s.settings.HKP.Bind,
+		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
+	}
+	for k, v := range s.settings.Conflux.Recon.Settings.Partners {
+		result.Peers = append(result.Peers, statsPeer{
+			Name:      k,
+			HTTPAddr:  v.HTTPAddr,
+			ReconAddr: v.ReconAddr,
+		})
+	}
+	sort.Sort(statsPeers(result.Peers))
+	return result, nil
 }
 
 func (s *Server) registerWebroot(webroot string) error {

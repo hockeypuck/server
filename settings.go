@@ -29,12 +29,12 @@ type confluxConfig struct {
 }
 
 type levelDB struct {
-	Path string `toml:"path" json:"-"`
+	Path string `toml:"path"`
 }
 
 type reconConfig struct {
 	recon.Settings
-	LevelDB levelDB `toml:"leveldb" json:"-"`
+	LevelDB levelDB `toml:"leveldb"`
 }
 
 const (
@@ -48,13 +48,13 @@ type HKPConfig struct {
 type HKPSConfig struct {
 	HKPConfig
 	Cert string `toml:"cert"`
-	Key  string `toml:"key" json:"-"`
+	Key  string `toml:"key"`
 }
 
 type PKSConfig struct {
 	From string     `toml:"from"`
 	To   []string   `toml:"to"`
-	SMTP SMTPConfig `toml:"smtp" json:"-"`
+	SMTP SMTPConfig `toml:"smtp"`
 }
 
 const (
@@ -75,13 +75,13 @@ const (
 
 type DBConfig struct {
 	Driver string       `toml:"driver"`
-	DSN    string       `toml:"dsn" json:"-"`
-	Mongo  *mongoConfig `toml:"mongo" json:"-"`
+	DSN    string       `toml:"dsn"`
+	Mongo  *mongoConfig `toml:"mongo"`
 }
 
 type mongoConfig struct {
-	DB         string `toml:"db" json:"-"`
-	Collection string `toml:"collection" json:"-"`
+	DB         string `toml:"db"`
+	Collection string `toml:"collection"`
 }
 
 const (
@@ -108,19 +108,19 @@ func DefaultOpenPGP() OpenPGPConfig {
 type Settings struct {
 	Conflux confluxConfig `toml:"conflux"`
 
-	IndexTemplate  string `toml:"indexTemplate" json:"-"`
-	VIndexTemplate string `toml:"vindexTemplate" json:"-"`
-	StatsTemplate  string `toml:"statsTemplate" json:"-"`
+	IndexTemplate  string `toml:"indexTemplate"`
+	VIndexTemplate string `toml:"vindexTemplate"`
+	StatsTemplate  string `toml:"statsTemplate"`
 
 	HKP  HKPConfig   `toml:"hkp"`
 	HKPS *HKPSConfig `toml:"hkps"`
 
 	OpenPGP OpenPGPConfig `toml:"openpgp"`
 
-	LogFile  string `toml:"logfile" json:"-"`
-	LogLevel string `toml:"loglevel" json:"-"`
+	LogFile  string `toml:"logfile"`
+	LogLevel string `toml:"loglevel"`
 
-	Webroot string `toml:"webroot" json:"-"`
+	Webroot string `toml:"webroot"`
 }
 
 const (
