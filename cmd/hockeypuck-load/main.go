@@ -50,15 +50,6 @@ func main() {
 		cmd.Die(errgo.New("missing PGP key file arguments"))
 	}
 
-	st, err := server.DialStorage(settings)
-	if err != nil {
-		cmd.Die(errgo.Mask(err))
-	}
-	sksPeer, err := sks.NewPeer(st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
-	if err != nil {
-		cmd.Die(errgo.Mask(err))
-	}
-
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGUSR2)
 	go func() {
@@ -73,6 +64,22 @@ func main() {
 			}
 		}
 	}()
+
+	err = load(settings, flag.Args())
+	cmd.Die(err)
+}
+
+func load(settings *server.Settings, args []string) error {
+	st, err := server.DialStorage(settings)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	sksPeer, err := sks.NewPeer(st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	defer sksPeer.Close()
+	defer sksPeer.WriteStats()
 
 	for _, arg := range args {
 		matches, err := filepath.Glob(arg)
@@ -94,15 +101,15 @@ func main() {
 				}
 			}
 			t := time.Now()
-			err = st.Insert(keys)
+			n, err := st.Insert(keys)
 			if err != nil {
-				log.Errorf("failed to insert keys from %q: %v", file, errgo.Details(err))
-			} else {
-				log.Infof("loaded %d keys from %q in %v", len(keys), file, time.Since(t))
+				log.Errorf("some keys failed to insert from %q: %v", file, errgo.Details(err))
+			}
+			if n > 0 {
+				log.Infof("inserted %d keys from %q in %v", n, file, time.Since(t))
 			}
 		}
 	}
-	sksPeer.WriteStats()
 
-	cmd.Die(err)
+	return nil
 }
