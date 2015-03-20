@@ -11,6 +11,7 @@ import (
 
 	"gopkg.in/errgo.v1"
 	"gopkg.in/hockeypuck/hkp.v0/sks"
+	"gopkg.in/hockeypuck/hkp.v0/storage"
 	log "gopkg.in/hockeypuck/logrus.v0"
 	"gopkg.in/hockeypuck/openpgp.v0"
 
@@ -74,12 +75,39 @@ func load(settings *server.Settings, args []string) error {
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	sksPeer, err := sks.NewPeer(st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
+	defer st.Close()
+
+	ptree, err := sks.NewPrefixTree(settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	defer sksPeer.Close()
-	defer sksPeer.WriteStats()
+	err = ptree.Create()
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	defer ptree.Close()
+
+	statsFilename := sks.StatsFilename(settings.Conflux.Recon.LevelDB.Path)
+	stats := sks.NewStats()
+	err = stats.ReadFile(statsFilename)
+	if err != nil {
+		log.Warningf("failed to open stats file %q: %v", statsFilename, err)
+		stats = sks.NewStats()
+	}
+	defer stats.WriteFile(statsFilename)
+
+	st.Subscribe(func(kc storage.KeyChange) error {
+		stats.Update(kc)
+		ka, ok := kc.(storage.KeyAdded)
+		if ok {
+			digestZp, err := sks.DigestZp(ka.Digest)
+			if err != nil {
+				return errgo.Notef(err, "bad digest %q", ka.Digest)
+			}
+			return ptree.Insert(digestZp)
+		}
+		return nil
+	})
 
 	for _, arg := range args {
 		matches, err := filepath.Glob(arg)

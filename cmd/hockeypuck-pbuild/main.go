@@ -9,6 +9,8 @@ import (
 
 	"gopkg.in/errgo.v1"
 	"gopkg.in/hockeypuck/hkp.v0/sks"
+	"gopkg.in/hockeypuck/hkp.v0/storage"
+	log "gopkg.in/hockeypuck/logrus.v0"
 
 	"github.com/hockeypuck/server"
 	"github.com/hockeypuck/server/cmd"
@@ -64,12 +66,38 @@ func pbuild(settings *server.Settings) error {
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	sksPeer, err := sks.NewPeer(st, settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
+	defer st.Close()
+
+	ptree, err := sks.NewPrefixTree(settings.Conflux.Recon.LevelDB.Path, &settings.Conflux.Recon.Settings)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	defer sksPeer.Close()
-	defer sksPeer.WriteStats()
+	err = ptree.Create()
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	defer ptree.Close()
+
+	var n int
+	st.Subscribe(func(kc storage.KeyChange) error {
+		ka, ok := kc.(storage.KeyAdded)
+		if ok {
+			digestZp, err := sks.DigestZp(ka.Digest)
+			if err != nil {
+				return errgo.Notef(err, "bad digest %q", ka.Digest)
+			}
+			err = ptree.Insert(digestZp)
+			if err != nil {
+				return errgo.Notef(err, "failed to insert digest %q", ka.Digest)
+			}
+
+			n++
+			if n%5000 == 0 {
+				log.Infof("%d keys added", n)
+			}
+		}
+		return nil
+	})
 
 	err = st.RenotifyAll()
 	return errgo.Mask(err)
