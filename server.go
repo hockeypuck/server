@@ -20,6 +20,7 @@ import (
 	"gopkg.in/hockeypuck/hkp.v0/storage"
 	log "gopkg.in/hockeypuck/logrus.v0"
 	"gopkg.in/hockeypuck/mgohkp.v0"
+	"gopkg.in/hockeypuck/pghkp.v0"
 )
 
 var version string
@@ -116,6 +117,8 @@ func DialStorage(settings *Settings) (storage.Storage, error) {
 			}
 		}
 		return mgohkp.Dial(settings.OpenPGP.DB.DSN, options...)
+	case "postgres-jsonb":
+		return pghkp.Dial(settings.OpenPGP.DB.DSN)
 	}
 	return nil, errgo.Newf("storage driver %q not supported", settings.OpenPGP.DB.Driver)
 }
