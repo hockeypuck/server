@@ -27,12 +27,12 @@ Total number of keys: {{ .Total }}
 
 <h3>Daily Histogram</h3>
 <table><tr><th>Day</th><th>New Keys</th><th>Updated Keys</th></tr>
-{{ range $day, $stats := .Daily }}<tr><td>{{ day $day }}</td><td>{{ $stats.Inserted }}</td><td>{{ $stats.Updated }}</td></tr>
+{{ range $stats := .Daily }}<tr><td>{{ day $stats.Time }}</td><td>{{ $stats.Inserted }}</td><td>{{ $stats.Updated }}</td></tr>
 {{ end }}</table>
 
 <h3>Hourly Histogram</h3>
 <table><tr><th>Hour</th><th>New Keys</th><th>Updated Keys</th></tr>
-{{ range $hour, $stats := .Hourly }}<tr><td>{{ hour $hour }}</td><td>{{ $stats.Inserted }}</td><td>{{ $stats.Updated }}</td></tr>
+{{ range $stats := .Hourly }}<tr><td>{{ hour $stats.Time }}</td><td>{{ $stats.Inserted }}</td><td>{{ $stats.Updated }}</td></tr>
 {{ end }}</table>
 
 </body></html>

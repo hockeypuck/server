@@ -124,15 +124,28 @@ func DialStorage(settings *Settings) (storage.Storage, error) {
 }
 
 type stats struct {
-	*sks.Stats
-
 	Now       string `json:"now"`
 	Version   string `json:"version"`
 	HTTPAddr  string `json:"httpAddr"`
 	ReconAddr string `json:"reconAddr"`
 
 	Peers []statsPeer `json:"peers"`
+
+	Total  int
+	Hourly []loadStat
+	Daily  []loadStat
 }
+
+type loadStat struct {
+	*sks.LoadStat
+	Time time.Time
+}
+
+type loadStats []loadStat
+
+func (s loadStats) Len() int           { return len(s) }
+func (s loadStats) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s loadStats) Less(i, j int) bool { return s[i].Time.Before(s[j].Time) }
 
 type statsPeer struct {
 	Name      string
@@ -147,13 +160,23 @@ func (s statsPeers) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s statsPeers) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 func (s *Server) stats() (interface{}, error) {
+	sksStats := s.sksPeer.Stats()
 	result := &stats{
 		Now:       time.Now().UTC().Format(time.RFC3339),
-		Stats:     s.sksPeer.Stats(),
 		Version:   version,
 		HTTPAddr:  s.settings.HKP.Bind,
 		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
+
+		Total: sksStats.Total,
 	}
+	for k, v := range sksStats.Hourly {
+		result.Hourly = append(result.Hourly, loadStat{LoadStat: v, Time: k})
+	}
+	sort.Sort(loadStats(result.Hourly))
+	for k, v := range sksStats.Daily {
+		result.Daily = append(result.Daily, loadStat{LoadStat: v, Time: k})
+	}
+	sort.Sort(loadStats(result.Daily))
 	for k, v := range s.settings.Conflux.Recon.Settings.Partners {
 		result.Peers = append(result.Peers, statsPeer{
 			Name:      k,
