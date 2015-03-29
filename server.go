@@ -15,12 +15,12 @@ import (
 	"gopkg.in/errgo.v1"
 	"gopkg.in/tomb.v2"
 
-	"gopkg.in/hockeypuck/hkp.v0"
-	"gopkg.in/hockeypuck/hkp.v0/sks"
-	"gopkg.in/hockeypuck/hkp.v0/storage"
+	"gopkg.in/hockeypuck/hkp.v1"
+	"gopkg.in/hockeypuck/hkp.v1/sks"
+	"gopkg.in/hockeypuck/hkp.v1/storage"
 	log "gopkg.in/hockeypuck/logrus.v0"
-	"gopkg.in/hockeypuck/mgohkp.v0"
-	"gopkg.in/hockeypuck/pghkp.v0"
+	"gopkg.in/hockeypuck/mgohkp.v1"
+	"gopkg.in/hockeypuck/pghkp.v1"
 )
 
 var version string
