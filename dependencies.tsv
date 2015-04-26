@@ -4,13 +4,13 @@ github.com/julienschmidt/httprouter	git	bde5c16eb82ff15a1734a3818d9b9547065f65b1
 github.com/lib/pq	git	b7af72a1fc1649a8871af32e23229fb89ae6cdc7	2014-10-13T18:50:28Z
 github.com/syndtr/goleveldb	git	e3f32eb300aa1e514fe8ba58d008da90a062273d	2015-03-08T01:26:59Z
 github.com/syndtr/gosnappy	git	156a073208e131d7d2e212cb749feae7c339e846	2015-02-10T04:23:34Z
-golang.org/x/crypto	git	1351f936d976c60a0a48d728281922cf63eafb8d	2015-02-18T23:42:20Z
+golang.org/x/crypto	git	c57d4a71915a248dbad846d60825145062b4c18e	2015-03-27T05:11:19Z
 gopkg.in/basen.v1	git	c8826fd23a9b8fee76fd0c3c5ac34a44cc15dc75	2015-01-14T00:31:04Z
 gopkg.in/errgo.v1	git	81357a83344ddd9f7772884874e5622c2a3da21c	2014-10-13T17:33:38Z
-gopkg.in/hockeypuck/conflux.v2	git	6a2aa8ca86cd1e67e96bc234e6ee54a94b1b6386	2015-04-08T23:08:08Z
+gopkg.in/hockeypuck/conflux.v2	git	571f8a44be05c5994fa0c3b58ee26bf33fe4a202	2015-04-26T16:56:51Z
 gopkg.in/hockeypuck/hkp.v1	git	148cf10d066b925e0331ba77e5b86c65865ba1eb	2015-04-10T03:13:06Z
 gopkg.in/hockeypuck/logrus.v0	git	ae9ba8a88ebf8006735488ed6da935b435f6e243	2015-03-27T02:48:30Z
-gopkg.in/hockeypuck/mgohkp.v1	git	a215e5008c6f13b9d9da7644c2f69bffbf24e6ce	2015-03-29T02:49:23Z
+gopkg.in/hockeypuck/mgohkp.v1	git	2a3bd1aae9dd4d5fd8af7ad6ba5ea1fe0bf6c1a2	2015-04-26T21:22:01Z
 gopkg.in/hockeypuck/openpgp.v1	git	2bc556d98d9388af1c70be58d92de329503c6cad	2015-03-29T02:47:22Z
 gopkg.in/hockeypuck/pghkp.v1	git	d9ceccfa9b24836536a22098ab511ed78530006d	2015-03-29T02:50:00Z
 gopkg.in/mgo.v2	git	dc255bb679efa273b6544a03261c4053505498a4	2014-07-30T20:00:37Z
