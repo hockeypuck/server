@@ -7,7 +7,7 @@ github.com/syndtr/gosnappy	git	156a073208e131d7d2e212cb749feae7c339e846	2015-02-
 golang.org/x/crypto	git	59435533c88bd0b1254c738244da1fe96b59d05d	2015-05-04T20:45:50Z
 gopkg.in/basen.v1	git	c8826fd23a9b8fee76fd0c3c5ac34a44cc15dc75	2015-01-14T00:31:04Z
 gopkg.in/errgo.v1	git	81357a83344ddd9f7772884874e5622c2a3da21c	2014-10-13T17:33:38Z
-gopkg.in/hockeypuck/conflux.v2	git	571f8a44be05c5994fa0c3b58ee26bf33fe4a202	2015-04-26T16:56:51Z
+gopkg.in/hockeypuck/conflux.v2	git	aa90c9a973df4ce6f26a9a8eda5418d35ef647d2	2015-05-08T02:54:30Z
 gopkg.in/hockeypuck/hkp.v1	git	148cf10d066b925e0331ba77e5b86c65865ba1eb	2015-04-10T03:13:06Z
 gopkg.in/hockeypuck/logrus.v0	git	55eb11d21d2a31a3cc93838241d04800f52e823d	2015-04-09T23:08:25Z
 gopkg.in/hockeypuck/mgohkp.v1	git	2a3bd1aae9dd4d5fd8af7ad6ba5ea1fe0bf6c1a2	2015-04-26T21:22:01Z
