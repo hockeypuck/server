@@ -1,16 +1,23 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"gopkg.in/errgo.v1"
 	"gopkg.in/hockeypuck/conflux.v2/recon"
 	"gopkg.in/hockeypuck/hkp.v1/sks"
-	log "gopkg.in/hockeypuck/logrus.v0"
+	"gopkg.in/hockeypuck/hkp.v1/storage"
+	"gopkg.in/hockeypuck/openpgp.v1"
+	"gopkg.in/tomb.v2"
 
 	"github.com/hockeypuck/server"
 	"github.com/hockeypuck/server/cmd"
@@ -18,6 +25,8 @@ import (
 
 var (
 	configFile = flag.String("config", "", "config file")
+	outputDir  = flag.String("path", ".", "output path")
+	count      = flag.Int("count", 15000, "keys per file")
 	cpuProf    = flag.Bool("cpuprof", false, "enable CPU profiling")
 	memProf    = flag.Bool("memprof", false, "enable mem profiling")
 )
@@ -83,6 +92,43 @@ func dump(settings *server.Settings) error {
 		return errgo.Mask(err)
 	}
 
+	var t tomb.Tomb
+	ch := make(chan string)
+
+	t.Go(func() error {
+		var i int
+		var digests []string
+		defer func() {
+			for _ = range ch {
+			}
+		}() // drain if early return on error
+		for digest := range ch {
+			digests = append(digests, digest)
+			if len(digests) >= *count {
+				err := writeKeys(st, digests, i)
+				if err != nil {
+					return errgo.Mask(err)
+				}
+				i++
+				digests = nil
+			}
+		}
+		if len(digests) > 0 {
+			err := writeKeys(st, digests, i)
+			if err != nil {
+				return errgo.Mask(err)
+			}
+		}
+		return nil
+	})
+	t.Go(func() error {
+		return traverse(root, ch)
+	})
+	return t.Wait()
+}
+
+func traverse(root recon.PrefixNode, ch chan string) error {
+	defer close(ch)
 	// Depth-first walk of the prefix tree
 	nodes := []recon.PrefixNode{root}
 	for len(nodes) > 0 {
@@ -96,8 +142,7 @@ func dump(settings *server.Settings) error {
 			}
 			for _, element := range elements {
 				zb := element.Bytes()
-				zb = recon.PadSksElement(zb)
-				log.Printf("%x", zb)
+				ch <- strings.ToLower(hex.EncodeToString(zb))
 			}
 		} else {
 			children, err := node.Children()
@@ -105,6 +150,44 @@ func dump(settings *server.Settings) error {
 				return errgo.Mask(err)
 			}
 			nodes = append(nodes, children...)
+		}
+	}
+	return nil
+}
+
+const chunksize = 20
+
+func writeKeys(st storage.Queryer, digests []string, num int) error {
+	rfps, err := st.MatchMD5(digests)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	log.Printf("matched %d fingerprints", len(rfps))
+	f, err := os.Create(filepath.Join(*outputDir, fmt.Sprintf("hkp-dump-%04d.pgp", num)))
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	defer f.Close()
+
+	for len(rfps) > 0 {
+		var chunk []string
+		if len(rfps) > chunksize {
+			chunk = rfps[:chunksize]
+			rfps = rfps[chunksize:]
+		} else {
+			chunk = rfps
+			rfps = nil
+		}
+
+		keys, err := st.FetchKeys(chunk)
+		if err != nil {
+			return errgo.Mask(err)
+		}
+		for _, key := range keys {
+			err := openpgp.WritePackets(f, key)
+			if err != nil {
+				return errgo.Mask(err)
+			}
 		}
 	}
 	return nil
