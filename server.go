@@ -126,6 +126,8 @@ func DialStorage(settings *Settings) (storage.Storage, error) {
 type stats struct {
 	Now       string `json:"now"`
 	Version   string `json:"version"`
+	Hostname  string `json:"hostname"`
+	Nodename  string `json:"nodename"`
 	Contact   string `json:"contact"`
 	HTTPAddr  string `json:"httpAddr"`
 	ReconAddr string `json:"reconAddr"`
@@ -162,6 +164,7 @@ func (s statsPeers) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 func (s *Server) stats() (interface{}, error) {
 	sksStats := s.sksPeer.Stats()
+
 	result := &stats{
 		Now:       time.Now().UTC().Format(time.RFC3339),
 		Version:   version,
@@ -171,6 +174,20 @@ func (s *Server) stats() (interface{}, error) {
 
 		Total: sksStats.Total,
 	}
+
+	nodename, err := os.Hostname()
+	if err != nil {
+		log.Warningf("cannot determine local hostname: %v", err)
+	} else {
+		result.Nodename = nodename
+	}
+
+	if s.settings.Hostname != "" {
+		result.Hostname = s.settings.Hostname
+	} else if nodename != "" {
+		result.Hostname = nodename
+	}
+
 	for k, v := range sksStats.Hourly {
 		result.Hourly = append(result.Hourly, loadStat{LoadStat: v, Time: k})
 	}
