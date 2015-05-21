@@ -126,6 +126,7 @@ func DialStorage(settings *Settings) (storage.Storage, error) {
 type stats struct {
 	Now       string `json:"now"`
 	Version   string `json:"version"`
+	Contact   string `json:"contact"`
 	HTTPAddr  string `json:"httpAddr"`
 	ReconAddr string `json:"reconAddr"`
 
@@ -164,6 +165,7 @@ func (s *Server) stats() (interface{}, error) {
 	result := &stats{
 		Now:       time.Now().UTC().Format(time.RFC3339),
 		Version:   version,
+		Contact:   s.settings.Contact,
 		HTTPAddr:  s.settings.HKP.Bind,
 		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
 
