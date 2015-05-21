@@ -121,6 +121,8 @@ type Settings struct {
 	LogLevel string `toml:"loglevel"`
 
 	Webroot string `toml:"webroot"`
+
+	Contact string `toml:"contact"`
 }
 
 const (
