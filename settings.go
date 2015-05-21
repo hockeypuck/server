@@ -122,7 +122,8 @@ type Settings struct {
 
 	Webroot string `toml:"webroot"`
 
-	Contact string `toml:"contact"`
+	Contact  string `toml:"contact"`
+	Hostname string `toml:"hostname"`
 }
 
 const (
