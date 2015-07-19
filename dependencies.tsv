@@ -12,6 +12,6 @@ gopkg.in/hockeypuck/hkp.v1	git	148cf10d066b925e0331ba77e5b86c65865ba1eb	2015-04-
 gopkg.in/hockeypuck/logrus.v0	git	55eb11d21d2a31a3cc93838241d04800f52e823d	2015-04-09T23:08:25Z
 gopkg.in/hockeypuck/mgohkp.v1	git	315bc3b0e2bb701822b0445b1ebb02ee9a2c0aa9	2015-05-21T22:51:24Z
 gopkg.in/hockeypuck/openpgp.v1	git	2bc556d98d9388af1c70be58d92de329503c6cad	2015-03-29T02:47:22Z
-gopkg.in/hockeypuck/pghkp.v1	git	d9ceccfa9b24836536a22098ab511ed78530006d	2015-03-29T02:50:00Z
+gopkg.in/hockeypuck/pghkp.v1	git	098cd7e4f3ec817e44b90dcc2833a84f736f6042	2015-07-19T17:15:38Z
 gopkg.in/mgo.v2	git	c6a7dce14133ccac2dcac3793f1d6e2ef048503a	2015-01-24T11:37:54Z
 gopkg.in/tomb.v2	git	14b3d72120e8d10ea6e6b7f87f7175734b1faab8	2014-06-26T14:46:23Z
