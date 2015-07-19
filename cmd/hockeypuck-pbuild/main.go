@@ -78,6 +78,8 @@ func pbuild(settings *server.Settings) error {
 	}
 	defer ptree.Close()
 
+	stats := sks.NewStats()
+
 	var n int
 	st.Subscribe(func(kc storage.KeyChange) error {
 		ka, ok := kc.(storage.KeyAdded)
@@ -91,6 +93,8 @@ func pbuild(settings *server.Settings) error {
 				return errgo.Notef(err, "failed to insert digest %q", ka.Digest)
 			}
 
+			stats.Update(kc)
+
 			n++
 			if n%5000 == 0 {
 				log.Infof("%d keys added", n)
@@ -99,6 +103,12 @@ func pbuild(settings *server.Settings) error {
 		return nil
 	})
 
+	defer func() {
+		err := stats.WriteFile(sks.StatsFilename(settings.Conflux.Recon.LevelDB.Path))
+		if err != nil {
+			log.Warningf("error writing stats: %v", err)
+		}
+	}()
 	err = st.RenotifyAll()
 	return errgo.Mask(err)
 }
