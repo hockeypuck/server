@@ -47,7 +47,7 @@ func main() {
 
 	args := flag.Args()
 	if len(args) == 0 {
-		log.Error("usage: %s [flags] <file1> [file2 .. fileN]", os.Args[0])
+		log.Errorf("usage: %s [flags] <file1> [file2 .. fileN]", os.Args[0])
 		cmd.Die(errgo.New("missing PGP key file arguments"))
 	}
 
