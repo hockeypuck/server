@@ -131,7 +131,7 @@ type stats struct {
 	Contact   string `json:"contact"`
 	HTTPAddr  string `json:"httpAddr"`
 	ReconAddr string `json:"reconAddr"`
-
+	Software string  `json:"software"`
 	Peers []statsPeer `json:"peers"`
 
 	Total  int
@@ -171,6 +171,7 @@ func (s *Server) stats() (interface{}, error) {
 		Contact:   s.settings.Contact,
 		HTTPAddr:  s.settings.HKP.Bind,
 		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
+		Software: "hockeypuck",
 
 		Total: sksStats.Total,
 	}
