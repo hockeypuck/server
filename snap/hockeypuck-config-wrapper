@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -euo pipefail
+
+CONFIG=$SNAP_DATA/config
+if [ ! -e "$CONFIG" ]; then
+	cp $SNAP/default-config $CONFIG
+fi
+
+
+if [ ! -x "$EDITOR" ]; then
+	echo "EDITOR unset; assuming nano"
+	EDITOR=nano
+fi
+
+exec $EDITOR $CONFIG

@@ -1,0 +1,6 @@
+.*.swp
+parts/
+prime/
+stage/
+snap/.snapcraft/
+*.snap
