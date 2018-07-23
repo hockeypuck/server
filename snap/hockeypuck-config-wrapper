@@ -5,8 +5,9 @@ set -euo pipefail
 CONFIG=$SNAP_DATA/config
 if [ ! -e "$CONFIG" ]; then
 	cp $SNAP/default-config $CONFIG
+	[ -d "$SNAP_COMMON/log" ] || mkdir -p $SNAP_COMMON/log
+	[ -d "$SNAP_COMMON/www" ] || cp -r $SNAP/www $SNAP_COMMON/www
 fi
-
 
 if [ ! -x "$EDITOR" ]; then
 	echo "EDITOR unset; assuming nano"

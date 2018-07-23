@@ -3,7 +3,6 @@
 set -euo pipefail
 
 CONFIG=$SNAP_DATA/config
-
 if [ ! -f "$CONFIG" ]; then
 	echo "Missing config file $CONFIG."
 	echo "Use 'hockeypuck.config' to create/edit config file"
