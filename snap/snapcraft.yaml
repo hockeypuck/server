@@ -38,6 +38,8 @@ parts:
   hockeypuck:
     build: |-
       cp ../../../snap/*-wrapper $SNAPCRAFT_PART_INSTALL
+      cp -r ../../../snap/templates $SNAPCRAFT_PART_INSTALL
+      cp -r ../../../snap/www $SNAPCRAFT_PART_INSTALL
     plugin: godeps
     go-packages:
     - github.com/hockeypuck/server/cmd/hockeypuck
