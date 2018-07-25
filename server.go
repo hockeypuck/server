@@ -120,7 +120,7 @@ type stats struct {
 	Version   string `json:"version"`
 	Hostname  string `json:"hostname"`
 	Nodename  string `json:"nodename"`
-	Contact   string `json:"contact"`
+	Contact   string `json:"server_contact"`
 	HTTPAddr  string `json:"httpAddr"`
 	ReconAddr string `json:"reconAddr"`
 	Software string  `json:"software"`
