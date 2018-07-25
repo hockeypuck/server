@@ -23,14 +23,6 @@ import (
 	"gopkg.in/hockeypuck/pghkp.v1"
 )
 
-var version string
-
-func init() {
-	if version == "" {
-		version = "~unreleased"
-	}
-}
-
 type Server struct {
 	settings  *Settings
 	st        storage.Storage
@@ -167,11 +159,11 @@ func (s *Server) stats() (interface{}, error) {
 
 	result := &stats{
 		Now:       time.Now().UTC().Format(time.RFC3339),
-		Version:   version,
+		Version:   s.settings.Version,
 		Contact:   s.settings.Contact,
 		HTTPAddr:  s.settings.HKP.Bind,
 		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
-		Software: "hockeypuck",
+		Software: s.settings.Software,
 
 		Total: sksStats.Total,
 	}
