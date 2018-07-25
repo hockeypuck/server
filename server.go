@@ -116,15 +116,15 @@ func DialStorage(settings *Settings) (storage.Storage, error) {
 }
 
 type stats struct {
-	Now       string `json:"now"`
-	Version   string `json:"version"`
-	Hostname  string `json:"hostname"`
-	Nodename  string `json:"nodename"`
-	Contact   string `json:"server_contact"`
-	HTTPAddr  string `json:"httpAddr"`
-	ReconAddr string `json:"reconAddr"`
-	Software string  `json:"software"`
-	Peers []statsPeer `json:"peers"`
+	Now       string      `json:"now"`
+	Version   string      `json:"version"`
+	Hostname  string      `json:"hostname"`
+	Nodename  string      `json:"nodename"`
+	Contact   string      `json:"server_contact"`
+	HTTPAddr  string      `json:"httpAddr"`
+	ReconAddr string      `json:"reconAddr"`
+	Software  string      `json:"software"`
+	Peers     []statsPeer `json:"peers"`
 
 	Total  int
 	Hourly []loadStat
@@ -163,7 +163,7 @@ func (s *Server) stats() (interface{}, error) {
 		Contact:   s.settings.Contact,
 		HTTPAddr:  s.settings.HKP.Bind,
 		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
-		Software: s.settings.Software,
+		Software:  s.settings.Software,
 
 		Total: sksStats.Total,
 	}
