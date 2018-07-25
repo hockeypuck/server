@@ -124,6 +124,8 @@ type Settings struct {
 
 	Contact  string `toml:"contact"`
 	Hostname string `toml:"hostname"`
+	Software string `toml:"software"`
+	Version  string `toml:"version"`
 }
 
 const (
@@ -147,6 +149,8 @@ func DefaultSettings() Settings {
 		},
 		OpenPGP:  DefaultOpenPGP(),
 		LogLevel: DefaultLogLevel,
+		Software: "Hockeypuck",
+		Version:  "~unreleased",
 	}
 }
 

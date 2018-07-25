@@ -23,14 +23,6 @@ import (
 	"gopkg.in/hockeypuck/pghkp.v1"
 )
 
-var version string
-
-func init() {
-	if version == "" {
-		version = "~unreleased"
-	}
-}
-
 type Server struct {
 	settings  *Settings
 	st        storage.Storage
@@ -124,15 +116,15 @@ func DialStorage(settings *Settings) (storage.Storage, error) {
 }
 
 type stats struct {
-	Now       string `json:"now"`
-	Version   string `json:"version"`
-	Hostname  string `json:"hostname"`
-	Nodename  string `json:"nodename"`
-	Contact   string `json:"contact"`
-	HTTPAddr  string `json:"httpAddr"`
-	ReconAddr string `json:"reconAddr"`
-	Software string  `json:"software"`
-	Peers []statsPeer `json:"peers"`
+	Now       string      `json:"now"`
+	Version   string      `json:"version"`
+	Hostname  string      `json:"hostname"`
+	Nodename  string      `json:"nodename"`
+	Contact   string      `json:"server_contact"`
+	HTTPAddr  string      `json:"httpAddr"`
+	ReconAddr string      `json:"reconAddr"`
+	Software  string      `json:"software"`
+	Peers     []statsPeer `json:"peers"`
 
 	Total  int
 	Hourly []loadStat
@@ -167,11 +159,11 @@ func (s *Server) stats() (interface{}, error) {
 
 	result := &stats{
 		Now:       time.Now().UTC().Format(time.RFC3339),
-		Version:   version,
+		Version:   s.settings.Version,
 		Contact:   s.settings.Contact,
 		HTTPAddr:  s.settings.HKP.Bind,
 		ReconAddr: s.settings.Conflux.Recon.Settings.ReconAddr,
-		Software: "hockeypuck",
+		Software:  s.settings.Software,
 
 		Total: sksStats.Total,
 	}
