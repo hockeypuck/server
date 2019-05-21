@@ -22,6 +22,11 @@ var (
 func main() {
 	flag.Parse()
 
+	if len(flag.Args()) != 0 {
+		flag.Usage()
+		cmd.Die(errgo.New("unexpected command line arguments"))
+	}
+
 	var (
 		settings *server.Settings
 		err      error
